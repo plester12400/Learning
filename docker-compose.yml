@@ -1,19 +1,8 @@
 version: '3'
 services:
-#  trans:
-#    build: .
-##    container_name: transactions1
-#    depends_on:
-#      - redis
-#      - elasticsearch
-#    volumes:
-#      - /Users/Paul/Downloads/data:/input_data
-#    networks:
-#      - docker_elk
   redis:
     image: "redis:alpine"
     hostname: redis
-#    container_name: redis1
     networks:
       - docker_elk
     ports:
@@ -24,11 +13,10 @@ services:
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:6.4.2
     hostname: esearch
-#    container_name: elasticsearch1
     environment:
       - cluster.name=docker-cluster
       - bootstrap.memory_lock=true
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "ES_JAVA_OPTS=-Xms512m -Xmx1024m"
     ulimits:
       memlock:
         soft: -1
