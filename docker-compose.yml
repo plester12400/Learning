@@ -1,0 +1,57 @@
+version: '3'
+services:
+#  trans:
+#    build: .
+##    container_name: transactions1
+#    depends_on:
+#      - redis
+#      - elasticsearch
+#    volumes:
+#      - /Users/Paul/Downloads/data:/input_data
+#    networks:
+#      - docker_elk
+  redis:
+    image: "redis:alpine"
+    hostname: redis
+#    container_name: redis1
+    networks:
+      - docker_elk
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:6.4.2
+    hostname: esearch
+#    container_name: elasticsearch1
+    environment:
+      - cluster.name=docker-cluster
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - esdata1:/usr/share/elasticsearch/data
+    ports:
+      - 9200:9200
+    networks:
+      - docker_elk
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:6.4.1
+    ports:
+      - "5601:5601"
+    links:
+      - elasticsearch
+    networks:
+      - docker_elk
+networks:
+  docker_elk:
+    driver: bridge
+
+volumes:
+  esdata1:
+  redis_data:
