@@ -201,6 +201,9 @@ class TransactionReaderFactory:
                     elif r.get('Posted Date', None) and r.get('Card No.', None):
                         logger.info("Returning CapitalOneTransactionReader")
                         return CapitalOneDataReader()
+                    elif r.get('STATION_NAME', None):
+                        logger.info("Returning WeatherDataReader")
+                        return WeatherDataReader()
             elif input_file[-4:] == '.xml':
                 for line in f:
                     if 'HealthData' in line:
@@ -208,3 +211,82 @@ class TransactionReaderFactory:
 
         logger.info("Unknown file type!")
         return None
+
+
+class WeatherDataReader(AbstractDataReader):
+
+    def load_data(self, from_location, post_to_queue=None):
+        try:
+            with open(from_location, "rt") as f:
+                index = 1
+                reader = csv.DictReader(f)
+                for d in reader:
+                    wd = WeatherData(d)
+                    shit_to_do = {
+                        'doc_type': self._get_document_type(),
+                        'data': wd,
+                        'index': wd.date
+                    }
+                    post_to_queue.put(shit_to_do)
+                    index += 1
+        except FileNotFoundError:
+            logger.warning("File not found. Returning nothingness")
+
+    def _get_document_type(self):
+        return 'weather-data-document'
+
+
+class WeatherData:
+    def __init__(self, data_row):
+        self.station_name = data_row['STATION_NAME']
+        self.date = format(data_row['DATE'])
+        self.dly_prcp_25pctl = self._evaluate(data_row['DLY-PRCP-25PCTL'])
+        self.dly_snwd_25pctl = self._evaluate(data_row['DLY-SNWD-25PCTL'])
+        self.dly_snow_25pctl = self._evaluate(data_row['DLY-SNOW-25PCTL'])
+        self.dly_prcp_50pctl = self._evaluate(data_row['DLY-PRCP-50PCTL'])
+        self.dly_snwd_50pctl = self._evaluate(data_row['DLY-SNWD-50PCTL'])
+        self.dly_snow_50pctl = self._evaluate(data_row['DLY-SNOW-50PCTL'])
+        self.dly_prcp_75pctl = self._evaluate(data_row['DLY-PRCP-75PCTL'])
+        self.dly_snwd_75pctl = self._evaluate(data_row['DLY-SNWD-75PCTL'])
+        self.dly_snow_75pctl = self._evaluate(data_row['DLY-SNOW-75PCTL'])
+        self.mtd_prcp_normal = self._evaluate(data_row['MTD-PRCP-NORMAL'])
+        self.mtd_snow_normal = self._evaluate(data_row['MTD-SNOW-NORMAL'])
+        self.ytd_prcp_normal = self._evaluate(data_row['YTD-PRCP-NORMAL'])
+        self.ytd_snow_normal = self._evaluate(data_row['YTD-SNOW-NORMAL'])
+        self.dly_prcp_pctall_ge001hi = self._evaluate(data_row['DLY-PRCP-PCTALL-GE001HI'])
+        self.dly_prcp_pctall_ge010hi = self._evaluate(data_row['DLY-PRCP-PCTALL-GE010HI'])
+        self.dly_prcp_pctall_ge050hi = self._evaluate(data_row['DLY-PRCP-PCTALL-GE050HI'])
+        self.dly_prcp_pctall_ge100hi = self._evaluate(data_row['DLY-PRCP-PCTALL-GE100HI'])
+        self.dly_snwd_pctall_ge001wi = self._evaluate(data_row['DLY-SNWD-PCTALL-GE001WI'])
+        self.dly_snwd_pctall_ge010wi = self._evaluate(data_row['DLY-SNWD-PCTALL-GE010WI'])
+        self.dly_snwd_pctall_ge003wi = self._evaluate(data_row['DLY-SNWD-PCTALL-GE003WI'])
+        self.dly_snwd_pctall_ge005wi = self._evaluate(data_row['DLY-SNWD-PCTALL-GE005WI'])
+        self.dly_snow_pctall_ge001ti = self._evaluate(data_row['DLY-SNOW-PCTALL-GE001TI'])
+        self.dly_snow_pctall_ge010ti = self._evaluate(data_row['DLY-SNOW-PCTALL-GE010TI'])
+        self.dly_snow_pctall_ge100ti = self._evaluate(data_row['DLY-SNOW-PCTALL-GE100TI'])
+        self.dly_snow_pctall_ge030ti = self._evaluate(data_row['DLY-SNOW-PCTALL-GE030TI'])
+        self.dly_snow_pctall_ge050ti = self._evaluate(data_row['DLY-SNOW-PCTALL-GE050TI'])
+        self.dly_tavg_normal = self._evaluate(data_row['DLY-TAVG-NORMAL'])
+        self.dly_dutr_normal = self._evaluate(data_row['DLY-DUTR-NORMAL'])
+        self.dly_tmax_normal = self._evaluate(data_row['DLY-TMAX-NORMAL'])
+        self.dly_tmin_normal = self._evaluate(data_row['DLY-TMIN-NORMAL'])
+        self.dly_tavg_stddev = self._evaluate(data_row['DLY-TAVG-STDDEV'])
+        self.dly_dutr_stddev = self._evaluate(data_row['DLY-DUTR-STDDEV'])
+        self.dly_tmax_stddev = self._evaluate(data_row['DLY-TMAX-STDDEV'])
+        self.dly_tmin_stddev = self._evaluate(data_row['DLY-TMIN-STDDEV'])
+
+    def __repr__(self):
+        return str(self.to_dict())
+
+    def to_dict(self):
+        return self.__dict__
+
+    def _evaluate(self, input_data):
+
+        if input_data in ['-9999', '-66.6', '-666']:
+            return None
+        else:
+            try:
+                return float(input_data)
+            except ValueError:
+                return None
