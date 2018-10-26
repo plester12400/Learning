@@ -17,10 +17,11 @@ worker_queue = queue.Queue()
 def es_worker():
     while True:
         shit_to_do = worker_queue.get()
-        es_client.index(index='{}-index'.format(shit_to_do['doc_type']),
-                        doc_type=shit_to_do['doc_type'],
-                        id=shit_to_do['index'],
-                        body=shit_to_do['data'].to_dict())
+        r = es_client.index(index='{}-index'.format(shit_to_do['doc_type']),
+                            doc_type=shit_to_do['doc_type'],
+                            id=shit_to_do['index'],
+                            body=shit_to_do['data'].to_dict())
+        print(r)
 
 
 if __name__ == '__main__':
@@ -47,7 +48,7 @@ if __name__ == '__main__':
                 logger.info("Processing file: {}".format(full_path))
                 transaction_reader = TransactionReaderFactory.get_transaction_reader(full_path)
                 if not transaction_reader:
-                    logger.warning("Unknown file type. Skipping")
+                    logger.warning("Unknown file type for {}. Skipping".format(full_path))
                     continue
             except Exception as e:
                 logger.exception(e)
@@ -58,6 +59,7 @@ if __name__ == '__main__':
             stored_hash = cache.get(full_path).decode('utf-8') if cache.get(full_path) else None
             hashes_match = el_hash == stored_hash
             load_file = not hashes_match
+            hashes_match = False
             if not hashes_match:
                 logger.info("Hash does not match. Reading file {}".format(full_path))
                 transaction_reader.load_data(from_location=full_path, post_to_queue=worker_queue)
