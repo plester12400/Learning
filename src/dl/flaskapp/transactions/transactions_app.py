@@ -6,7 +6,7 @@ import logging
 from os import listdir, rename
 from os.path import isfile, join
 from datetime import datetime
-from src.dl.flaskapp.transactions.parsers.file_parsers import TransactionReaderFactory
+from src.dl.flaskapp.transactions.parsers.transaction_factory import TransactionReaderFactory
 import queue
 from threading import Thread
 
