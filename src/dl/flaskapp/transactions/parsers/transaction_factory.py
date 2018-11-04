@@ -1,6 +1,7 @@
 import logging
 import csv
-from src.dl.flaskapp.transactions.parsers.csv_readers import CMCUDataReader, CapitalOneDataReader, WeatherDataReader
+from src.dl.flaskapp.transactions.parsers.csv_readers import CMCUDataReader, CapitalOneDataReader, WeatherDataReader, \
+    VanguardTransactionReader
 from src.dl.flaskapp.transactions.parsers.xml_readers import HealthDataReader
 
 logger = logging.getLogger(__name__)
@@ -27,6 +28,9 @@ class TransactionReaderFactory:
                     elif r.get('STATION_NAME', None):
                         logger.info("Returning WeatherDataReader")
                         return WeatherDataReader()
+                    elif r.get('Settlement Date', None):
+                        logger.info("Returning Vanguard")
+                        return VanguardTransactionReader()
             elif input_file[-4:] == '.xml':
                 for line in f:
                     if 'HealthData' in line:

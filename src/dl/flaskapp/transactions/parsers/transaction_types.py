@@ -159,4 +159,15 @@ class WeatherData:
 
 class VanguardTransaction:
     def __init__(self, data_row):
-        pass
+        self.transaction_type = data_row['Transaction Type']
+        self.trade_date = data_row['Trade Date']
+        self.settlement_date = data_row['Settlement Date']
+        self.principal_amount = float(data_row['Principal Amount'])
+        self.account_number = data_row['Account Number']
+        self.description = data_row['Transaction Description']
+
+    def __repr__(self):
+        return str(self.to_dict())
+
+    def to_dict(self):
+        return self.__dict__
