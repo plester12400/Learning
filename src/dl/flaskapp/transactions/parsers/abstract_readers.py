@@ -39,3 +39,14 @@ class AbstractCSVReader(AbstractDataReader):
     @abstractmethod
     def _get_transaction(self, data):
         pass
+
+    def _post_it(self, reader, post_to_queue):
+        index = 1
+        for d in reader:
+            shit_to_do = {
+                'index': index,
+                'doc_type': self._get_document_type(),
+                'data': self._get_transaction(d)
+            }
+            post_to_queue.put(shit_to_do)
+            index += 1

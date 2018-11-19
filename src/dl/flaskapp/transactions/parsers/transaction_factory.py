@@ -1,13 +1,17 @@
 import logging
 import csv
 from src.dl.flaskapp.transactions.parsers.csv_readers import CMCUDataReader, CapitalOneDataReader, WeatherDataReader, \
-    VanguardTransactionReader
+    VanguardTransactionReader, CapitalOneAutoDataReader
 from src.dl.flaskapp.transactions.parsers.xml_readers import HealthDataReader
 
 logger = logging.getLogger(__name__)
 
 
 class TransactionReaderFactory:
+    @classmethod
+    def has_all(cls, elements, input_line):
+        return all(map(lambda x: x in input_line, elements))
+
     @classmethod
     def get_transaction_reader(cls, input_file):
         """
@@ -17,20 +21,22 @@ class TransactionReaderFactory:
         """
         with open(input_file, "rt") as f:
             if input_file[-4:] == '.csv':
-                reader = csv.DictReader(f)
-                for r in reader:
-                    if r.get('category', None) and r.get('account', None):
-                        logger.info("Returning CMCUTransactionReader")
-                        return CMCUDataReader()
-                    elif r.get('Posted Date', None) and r.get('Card No.', None):
-                        logger.info("Returning CapitalOneTransactionReader")
-                        return CapitalOneDataReader()
-                    elif r.get('STATION_NAME', None):
-                        logger.info("Returning WeatherDataReader")
-                        return WeatherDataReader()
-                    elif r.get('Settlement Date', None):
-                        logger.info("Returning Vanguard")
-                        return VanguardTransactionReader()
+                line = f.readline()
+                if cls.has_all(['category', 'account'], line):
+                    logger.info("Returning CMCUTransactionReader")
+                    return CMCUDataReader()
+                elif cls.has_all(['Posted Dat', 'account'], line):
+                    logger.info("Returning CapitalOneTransactionReader")
+                    return CapitalOneDataReader()
+                elif cls.has_all(['STATION_NAME'], line):
+                    logger.info("Returning WeatherDataReader")
+                    return WeatherDataReader()
+                elif cls.has_all(['Settlement Date'], line):
+                    logger.info("Returning Vanguard")
+                    return VanguardTransactionReader()
+                elif cls.has_all(['Principal', 'Interest'], line):
+                    logger.info('Returning Capital One Auto Reader')
+                    return CapitalOneAutoDataReader()
             elif input_file[-4:] == '.xml':
                 for line in f:
                     if 'HealthData' in line:

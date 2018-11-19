@@ -22,6 +22,25 @@ class CapitalOneTransaction:
         return self.__dict__
 
 
+class CapitalOneAutoTransaction:
+    def __init__(self, transaction):
+        self.date = parse(transaction['Date'])
+        self.description = transaction['Description']
+        self.principal = float(transaction['Principal'])
+        self.year = self.date.year
+        self.month = self.date.month
+        self.day_of_month = self.date.day
+        self.interest = float(transaction['Interest'])
+        self.fees = float(transaction['Fees'])
+        self.amount_applied_to_principal = float(transaction['Amount'])
+
+    def __repr__(self):
+        return str(self.to_dict())
+
+    def to_dict(self):
+        return self.__dict__
+
+
 class CMCUTransaction:
     debit_none_remap = {
         'AutoLoan': ['AUTO'],
