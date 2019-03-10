@@ -1,6 +1,5 @@
 from elasticsearch import Elasticsearch
 import redis
-import hashlib
 import time
 import logging
 from os import listdir, rename
@@ -25,12 +24,14 @@ def es_worker():
 
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO)
+    FORMAT = "%(asctime)s %(message)s %(filename)s:%(lineno)s"
+    logging.basicConfig(level=logging.INFO, format=FORMAT)
 
-    cache = redis.Redis(host='localhost', port=6379)
-    es_client = Elasticsearch(hosts=['localhost:9200'])
+    cache = redis.Redis(host='redis', port=6379)
+    es_client = Elasticsearch(hosts=['elasticsearch:9200'])
 
-    DATA_DIRECTORY = "/Users/Paul/Downloads/data/"
+    # soft link to /Users/Paul/Downloads/Data - /usr/input/data
+    DATA_DIRECTORY = "/usr/input/data"
 
     workers = []
     # four cores
@@ -40,9 +41,9 @@ if __name__ == '__main__':
         workers.append(t)
 
     while True:
-        csvfiles = [f for f in listdir(DATA_DIRECTORY) if
-                    isfile(join(DATA_DIRECTORY, f)) and f[-4:] in ['.csv', '.xml']]
-        for file in csvfiles:
+        input_files = [f for f in listdir(DATA_DIRECTORY) if
+                       isfile(join(DATA_DIRECTORY, f)) and f[-4:] in ['.csv', '.xml']]
+        for file in input_files:
             try:
                 full_path = join(DATA_DIRECTORY, file)
                 logger.info("Processing file: {}".format(full_path))
@@ -53,19 +54,8 @@ if __name__ == '__main__':
             except Exception as e:
                 logger.exception(e)
                 continue
-
-            el_hash = hashlib.md5(open(full_path, 'rb').read()).hexdigest()
-            hash_exists = cache.exists(full_path)
-            stored_hash = cache.get(full_path).decode('utf-8') if cache.get(full_path) else None
-            hashes_match = el_hash == stored_hash
-            load_file = not hashes_match
-            hashes_match = False
-            if not hashes_match:
-                logger.info("Hash does not match. Reading file {}".format(full_path))
-                transaction_reader.load_data(from_location=full_path, post_to_queue=worker_queue)
-                cache.set(full_path, el_hash)
-                rename(full_path, '{}_{}'.format(full_path, datetime.now().strftime('%Y_%m_%d_%H_%M_%s')))
-            else:
-                logger.info("File hasn't changed. Not loading")
+            logger.info("Hash does not match. Reading file {}".format(full_path))
+            transaction_reader.load_data(from_location=full_path, post_to_queue=worker_queue)
+            rename(full_path, '{}_{}'.format(full_path, datetime.now().strftime('%Y_%m_%d_%H_%M_%s')))
         logger.info("Sleeping one minute until next round")
         time.sleep(60)

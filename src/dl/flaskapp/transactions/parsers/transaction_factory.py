@@ -1,5 +1,5 @@
 import logging
-import csv
+
 from src.dl.flaskapp.transactions.parsers.csv_readers import CMCUDataReader, CapitalOneDataReader, WeatherDataReader, \
     VanguardTransactionReader, CapitalOneAutoDataReader
 from src.dl.flaskapp.transactions.parsers.xml_readers import HealthDataReader
@@ -25,7 +25,7 @@ class TransactionReaderFactory:
                 if cls.has_all(['category', 'account'], line):
                     logger.info("Returning CMCUTransactionReader")
                     return CMCUDataReader()
-                elif cls.has_all(['Posted Dat', 'account'], line):
+                elif cls.has_all(['Posted Date', 'Category'], line):
                     logger.info("Returning CapitalOneTransactionReader")
                     return CapitalOneDataReader()
                 elif cls.has_all(['STATION_NAME'], line):

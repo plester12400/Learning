@@ -1,5 +1,11 @@
 version: '3'
 services:
+  absorber:
+    build: .
+    networks:
+      - docker_elk
+    volumes:
+      - /Users/Paul/Downloads/data:/usr/input/data
   redis:
     image: "redis:alpine"
     hostname: redis
