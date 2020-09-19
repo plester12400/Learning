@@ -31,7 +31,7 @@ if __name__ == '__main__':
     es_client = Elasticsearch(hosts=['elasticsearch:9200'])
 
     # soft link to /Users/Paul/Downloads/Data - /usr/input/data
-    DATA_DIRECTORY = "/usr/input/data"
+    DATA_DIRECTORY = "/Users/Paul/Downloads/Data"
 
     workers = []
     # four cores
